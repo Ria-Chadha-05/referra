@@ -1,0 +1,328 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@import url('https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,400;0,600;0,700;1,400&family=DM+Sans:opsz,wght@9..40,300;9..40,400;9..40,500;9..40,600&family=JetBrains+Mono:wght@300;400;500&display=swap');
+
+/* ═══════════════════════════════════════════════════════════════════════════
+   REFERRA — Design System: "Ink & Signal"
+   Deep academic authority + precision digital clarity
+   ═══════════════════════════════════════════════════════════════════════════ */
+
+:root {
+  /* ── Brand Navy ─────────────────────────────────────────────── */
+  --navy:        #123C69;
+  --navy-dk:     #0a2540;
+  --navy-mid:    #1a4e82;
+  --navy-lt:     #245e96;
+  --navy-ghost:  rgba(18, 60, 105, 0.06);
+
+  /* ── Accent Crimson (CTA / interactive) ─────────────────────── */
+  --indigo:      #AC3B61;
+  --indigo-dk:   #8e2e4f;
+  --indigo-lt:   rgba(172, 59, 97, 0.10);
+  --indigo-bd:   rgba(172, 59, 97, 0.28);
+  --indigo-glow: rgba(172, 59, 97, 0.18);
+
+  /* ── Semantic: Accepted ──────────────────────────────────────── */
+  --teal:        #1a6e4a;
+  --teal-dk:     #145438;
+  --teal-lt:     rgba(26, 110, 74, 0.09);
+  --teal-bd:     rgba(26, 110, 74, 0.28);
+
+  /* ── Semantic: Partial ───────────────────────────────────────── */
+  --amber:       #b87333;
+  --amber-lt:    rgba(184, 115, 51, 0.10);
+  --amber-bd:    rgba(184, 115, 51, 0.28);
+
+  /* ── Semantic: Weak ──────────────────────────────────────────── */
+  --rose:        #8e1a1a;
+  --rose-lt:     rgba(142, 26, 26, 0.08);
+  --rose-bd:     rgba(142, 26, 26, 0.25);
+
+  /* ── Neutral Surfaces ────────────────────────────────────────── */
+  --bg:          #F5EFE9;
+  --surface:     #FFFFFF;
+  --surface-2:   #EEE2DC;
+  --surface-3:   #E4D5CB;
+  --panel-head:  #FAF6F3;
+
+  /* ── Borders ─────────────────────────────────────────────────── */
+  --border:      #D4C4BA;
+  --border-dk:   #BAB2B5;
+  --border-lt:   #ECE4DE;
+
+  /* ── Typography ──────────────────────────────────────────────── */
+  --text:        #1A1210;
+  --text-mid:    #3D2B24;
+  --text-muted:  #7A6058;
+  --text-faint:  #BAB2B5;
+
+  /* ── Score tiers ─────────────────────────────────────────────── */
+  --str-excel:   #1a6e4a;
+  --str-strong:  #123C69;
+  --str-good:    #AC3B61;
+  --str-mod:     #b87333;
+  --str-weak:    #8e1a1a;
+
+  /* ── Fonts ───────────────────────────────────────────────────── */
+  --ff-display:  'Playfair Display', Georgia, serif;
+  --ff-ui:       'DM Sans', system-ui, sans-serif;
+  --ff-mono:     'JetBrains Mono', ui-monospace, monospace;
+
+  /* ── Shadows ─────────────────────────────────────────────────── */
+  --shadow-sm:   0 1px 3px rgba(18, 60, 105, 0.08), 0 1px 2px rgba(18, 60, 105, 0.06);
+  --shadow-md:   0 4px 16px rgba(18, 60, 105, 0.10), 0 2px 6px rgba(18, 60, 105, 0.07);
+  --shadow-lg:   0 8px 32px rgba(18, 60, 105, 0.14), 0 4px 12px rgba(18, 60, 105, 0.09);
+  --shadow-card: 0 2px 8px rgba(18, 60, 105, 0.08);
+}
+
+/* ── Base reset — full-viewport coverage ─────────────────────────────────── */
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+html {
+  height: 100%;
+  width: 100%;
+  overflow: hidden;
+}
+
+body {
+  height: 100%;
+  width: 100%;
+  overflow: hidden;
+  background: var(--bg);
+  color: var(--text);
+  font-family: var(--ff-ui);
+  font-size: 14px;
+  line-height: 1.6;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+/* Next.js root wrappers — must fill viewport */
+#__next,
+[data-nextjs-scroll-focus-boundary] {
+  height: 100%;
+  display: flex;
+  flex-direction: column;
+}
+
+/* ── Typography helpers ──────────────────────────────────────────────────── */
+.font-display { font-family: var(--ff-display); }
+.font-ui      { font-family: var(--ff-ui); }
+.font-mono    { font-family: var(--ff-mono); }
+
+/* ── Scrollbar ───────────────────────────────────────────────────────────── */
+::-webkit-scrollbar         { width: 5px; height: 5px; }
+::-webkit-scrollbar-track   { background: transparent; }
+::-webkit-scrollbar-thumb   { background: var(--border-dk); border-radius: 3px; }
+::-webkit-scrollbar-thumb:hover { background: var(--text-faint); }
+
+/* ── Sentence highlight states ──────────────────────────────────────────── */
+.s-claim {
+  background: linear-gradient(0deg, var(--indigo-lt) 0%, transparent 100%);
+  border-bottom: 2px solid var(--indigo);
+  border-radius: 2px;
+  cursor: pointer;
+  transition: background 0.15s, border-color 0.15s;
+  padding: 1px 2px;
+}
+.s-claim:hover, .s-claim.active {
+  background: var(--indigo-glow);
+  border-bottom-color: var(--indigo-dk);
+}
+.s-accepted {
+  background: var(--teal-lt);
+  border-bottom: 2px solid var(--teal);
+  border-radius: 2px;
+  padding: 1px 2px;
+}
+.s-ignored {
+  opacity: 0.55;
+  border-bottom: 2px dotted var(--border-dk);
+  border-radius: 2px;
+  padding: 1px 2px;
+}
+
+/* ── Card entrance animation ─────────────────────────────────────────────── */
+@keyframes card-in {
+  from { opacity: 0; transform: translateY(8px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+.card-in { animation: card-in 0.22s cubic-bezier(0.22, 1, 0.36, 1) both; }
+
+/* ── Score meter ─────────────────────────────────────────────────────────── */
+@keyframes fill-bar {
+  from { width: 0%; }
+}
+.score-bar-fill { animation: fill-bar 0.6s cubic-bezier(0.22, 1, 0.36, 1) both; }
+
+/* ── Spinner ─────────────────────────────────────────────────────────────── */
+@keyframes spin { to { transform: rotate(360deg); } }
+
+.spinner {
+  width: 26px; height: 26px;
+  border: 2px solid var(--border-dk);
+  border-top-color: var(--indigo);
+  border-radius: 50%;
+  animation: spin 0.7s linear infinite;
+  flex-shrink: 0;
+}
+.spinner-sm {
+  width: 16px; height: 16px;
+  border: 2px solid var(--border-dk);
+  border-top-color: var(--indigo);
+  border-radius: 50%;
+  animation: spin 0.7s linear infinite;
+  flex-shrink: 0;
+}
+
+/* ── Pulse dot ───────────────────────────────────────────────────────────── */
+@keyframes pulse-dot {
+  0%, 100% { opacity: 1; transform: scale(1); }
+  50%       { opacity: 0.5; transform: scale(0.85); }
+}
+.pulse-dot {
+  width: 6px; height: 6px;
+  border-radius: 50%;
+  background: var(--teal);
+  animation: pulse-dot 1.8s ease-in-out infinite;
+}
+
+/* ── Panel resize handle ─────────────────────────────────────────────────── */
+.resize-handle {
+  width: 5px;
+  cursor: col-resize;
+  background: var(--border);
+  flex-shrink: 0;
+  transition: background 0.15s;
+  position: relative;
+  z-index: 10;
+  align-self: stretch;
+}
+.resize-handle:hover,
+.resize-handle.active {
+  background: var(--indigo);
+}
+.resize-handle::after {
+  content: '';
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  width: 1px;
+  height: 24px;
+  border-left: 1px dashed rgba(172, 59, 97, 0.4);
+  display: none;
+}
+.resize-handle:hover::after { display: block; }
+
+/* ── Score tier colors ───────────────────────────────────────────────────── */
+.score-excellent { color: var(--str-excel); }
+.score-strong    { color: var(--str-strong); }
+.score-good      { color: var(--str-good); }
+.score-moderate  { color: var(--str-mod); }
+.score-weak      { color: var(--str-weak); }
+
+.bg-score-excellent { background: rgba(5, 150, 105, 0.10); border-color: rgba(5, 150, 105, 0.30); color: var(--str-excel); }
+.bg-score-strong    { background: var(--teal-lt);           border-color: var(--teal-bd);           color: var(--teal-dk); }
+.bg-score-good      { background: var(--indigo-lt);         border-color: var(--indigo-bd);         color: var(--indigo-dk); }
+.bg-score-moderate  { background: var(--amber-lt);          border-color: var(--amber-bd);          color: var(--amber); }
+.bg-score-weak      { background: var(--rose-lt);           border-color: var(--rose-bd);           color: var(--rose); }
+
+/* ── Tag/chip ────────────────────────────────────────────────────────────── */
+.chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 2px 8px;
+  border-radius: 4px;
+  border: 1px solid;
+  font-family: var(--ff-mono);
+  font-size: 0.62rem;
+  font-weight: 500;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  white-space: nowrap;
+}
+
+/* ── Input focus ring ────────────────────────────────────────────────────── */
+input:focus, textarea:focus, select:focus {
+  outline: none;
+  box-shadow: 0 0 0 2px var(--indigo-lt), 0 0 0 1px var(--indigo-bd);
+}
+
+textarea::placeholder {
+  color: var(--text-faint);
+  opacity: 1;
+}
+
+/* ── Tooltip ─────────────────────────────────────────────────────────────── */
+[data-tooltip] { position: relative; }
+[data-tooltip]::after {
+  content: attr(data-tooltip);
+  position: absolute;
+  bottom: calc(100% + 6px);
+  left: 50%;
+  transform: translateX(-50%);
+  background: var(--navy);
+  color: #fff;
+  font-family: var(--ff-mono);
+  font-size: 0.6rem;
+  padding: 3px 8px;
+  border-radius: 4px;
+  white-space: nowrap;
+  pointer-events: none;
+  opacity: 0;
+  transition: opacity 0.15s;
+  z-index: 1000;
+}
+[data-tooltip]:hover::after { opacity: 1; }
+
+/* ── Shimmer loading ─────────────────────────────────────────────────────── */
+@keyframes shimmer {
+  0%   { background-position: -500px 0; }
+  100% { background-position: 500px 0; }
+}
+.shimmer {
+  background: linear-gradient(90deg, var(--surface-2) 25%, var(--surface-3) 50%, var(--surface-2) 75%);
+  background-size: 1000px 100%;
+  animation: shimmer 1.5s infinite linear;
+}
+
+/* ── Fade up ─────────────────────────────────────────────────────────────── */
+@keyframes fade-up {
+  from { opacity: 0; transform: translateY(12px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+.fade-up { animation: fade-up 0.35s cubic-bezier(0.22, 1, 0.36, 1) both; }
+
+/* ── Panel layout helpers ────────────────────────────────────────────────── */
+.panel-col {
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  min-height: 0;
+  min-width: 0;
+  flex-shrink: 0;
+}
+
+/* ── Step dots ───────────────────────────────────────────────────────────── */
+.step-dot {
+  width: 8px; height: 8px;
+  border-radius: 50%;
+  transition: all 0.2s;
+}
+.step-dot.active  { background: var(--indigo); box-shadow: 0 0 0 3px var(--indigo-lt); }
+.step-dot.done    { background: var(--teal); }
+.step-dot.pending { background: var(--border-dk); }
+
+/* ── Empty-state fill helper ─────────────────────────────────────────────── */
+.flex-fill {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  min-height: 0;
+}
