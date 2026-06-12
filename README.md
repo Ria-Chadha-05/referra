@@ -41,6 +41,17 @@ Paste a paragraph of academic writing, and Referra:
 **Real-world relevance:** Students, researchers, and academic writers can go from a raw draft to a properly-cited, source-backed document in minutes — without ever leaving the editor.
 
 ---
+## 🚀 Demo
+
+<div align="center">
+
+<a href="https://youtu.be/TpsHjV7ecy0?si=dBvU1GmBQktuRG33">
+  <img src="https://img.youtube.com/vi/TpsHjV7ecy0/maxresdefault.jpg" width="800" alt="Referra Demo Video">
+</a>
+
+</div>
+
+---
 
 ## ✨ Features
 
