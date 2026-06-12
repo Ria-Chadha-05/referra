@@ -37,7 +37,6 @@ app = FastAPI(
 )
 
 # ── CORS ─────────────────────────────────────────────────────────────────────
-# Accepts wildcard "*" for open APIs or a list of allowed origins
 _origins = settings.CORS_ORIGINS
 if "*" not in _origins:
     _origins = list(set(_origins + ["http://localhost:3000", "http://localhost:3001"]))
