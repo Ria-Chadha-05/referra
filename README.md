@@ -35,7 +35,7 @@ Paste a paragraph of academic writing, and Referra:
 2. Retrieves real candidate papers from **Semantic Scholar**
 3. Uses **sentence embeddings** to semantically rank papers against your claim
 4. Scores and **verifies** each paper using **LLaMA 3 70B (via Groq)** to confirm it actually supports the claim
-5. Returns the **top verified references**, ready to insert in **APA / MLA / Chicago** format
+5. Returns the **top verified references**, ready to insert in **APA / MLA / IEEE** format
 6. Lets you **export the finished, cited document as a `.docx` file**
 
 **Real-world relevance:** Students, researchers, and academic writers can go from a raw draft to a properly-cited, source-backed document in minutes — without ever leaving the editor.
