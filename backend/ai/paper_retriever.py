@@ -4,11 +4,31 @@ Semantic Scholar API for each detected claim.
 
 Results are cached in the DB (cached_papers table) to avoid redundant API calls.
 Falls back to OpenAlex if Semantic Scholar returns nothing.
+
+Networking/resilience notes (see services/http_client.py, services/rate_limiter.py,
+services/request_cache.py for the shared infrastructure):
+  - All requests go through one shared, connection-pooled httpx.AsyncClient
+    (HTTP/2 enabled) instead of opening a new client per call.
+  - Concurrency to each provider is bounded by a semaphore (2 for Semantic
+    Scholar, 3 for OpenAlex) plus a minimum inter-request interval, so a
+    document with many claims can't burst dozens of simultaneous requests.
+  - Retries with exponential backoff + jitter on 429/500/502/503/504,
+    honoring Retry-After when present.
+  - An in-process query cache + in-flight de-duplication layer means that if
+    two claims ask for the same (or a recently-seen) query, only one real
+    HTTP request is made.
 """
 import logging
+import time
+import asyncio
 import httpx
 from sqlalchemy.orm import Session
 from db.models.paper import CachedPaper
+
+from config import settings
+from services.http_client import get_http_client
+from services.rate_limiter import semantic_scholar_limiter, openalex_limiter
+from services.request_cache import semantic_scholar_cache, openalex_cache
 
 logger = logging.getLogger(__name__)
 
@@ -20,9 +40,14 @@ SS_FIELDS = (
     "externalIds,venue,journal,publicationVenue"
 )
 
+# Identify ourselves politely to OpenAlex (unlocks their faster "polite pool")
+# and to Semantic Scholar via a descriptive User-Agent.
+CONTACT_EMAIL = getattr(settings, "CONTACT_EMAIL", "") or "support@referra.app"
+USER_AGENT = f"Referra/2.0 (mailto:{CONTACT_EMAIL})"
+
 
 def _build_ss_headers(api_key: str) -> dict:
-    headers = {}
+    headers = {"User-Agent": USER_AGENT}
     if api_key:
         headers["x-api-key"] = api_key
     return headers
@@ -112,14 +137,16 @@ def _cache_papers(papers: list[dict], db: Session | None) -> None:
         db.rollback()
 
 
-async def _fetch_semantic_scholar(
-    query: str, api_key: str, limit: int
-) -> list[dict]:
+async def _do_fetch_semantic_scholar(query: str, api_key: str, limit: int) -> list[dict]:
+    """Actual network call — always goes through the shared client + limiter."""
     headers = _build_ss_headers(api_key)
     params = {"query": query, "limit": limit, "fields": SS_FIELDS}
-    async with httpx.AsyncClient(timeout=15) as client:
-        resp = await client.get(f"{SS_BASE}/paper/search", params=params, headers=headers)
-        resp.raise_for_status()
+    client = get_http_client()
+
+    async def _request() -> httpx.Response:
+        return await client.get(f"{SS_BASE}/paper/search", params=params, headers=headers)
+
+    resp = await semantic_scholar_limiter.execute(_request, endpoint="/paper/search")
     data = resp.json()
     papers = []
     for p in data.get("data", []):
@@ -129,16 +156,36 @@ async def _fetch_semantic_scholar(
     return papers
 
 
-async def _fetch_openalex(query: str, limit: int) -> list[dict]:
-    """Fallback: OpenAlex free API."""
+async def _fetch_semantic_scholar(query: str, api_key: str, limit: int) -> list[dict]:
+    """Cached/de-duplicated entry point for Semantic Scholar lookups."""
+    key = semantic_scholar_cache.make_key("semantic_scholar", query)
+    start = time.monotonic()
+    result, cache_hit = await semantic_scholar_cache.get_or_fetch(
+        key, lambda: _do_fetch_semantic_scholar(query, api_key, limit)
+    )
+    latency_ms = round((time.monotonic() - start) * 1000, 1)
+    logger.info(
+        "provider=semantic_scholar cache=%s query=%r papers=%d latency_ms=%s",
+        "hit" if cache_hit else "miss", query[:60], len(result), latency_ms,
+    )
+    return result
+
+
+async def _do_fetch_openalex(query: str, limit: int) -> list[dict]:
+    """Actual network call — always goes through the shared client + limiter."""
     params = {
         "search": query,
         "per-page": limit,
         "select": "title,authorships,publication_year,abstract_inverted_index,cited_by_count,doi,primary_location",
+        "mailto": CONTACT_EMAIL,
     }
-    async with httpx.AsyncClient(timeout=15) as client:
-        resp = await client.get(f"{OA_BASE}/works", params=params)
-        resp.raise_for_status()
+    headers = {"User-Agent": USER_AGENT}
+    client = get_http_client()
+
+    async def _request() -> httpx.Response:
+        return await client.get(f"{OA_BASE}/works", params=params, headers=headers)
+
+    resp = await openalex_limiter.execute(_request, endpoint="/works")
     results = resp.json().get("results", [])
     papers = []
     for r in results:
@@ -175,6 +222,21 @@ async def _fetch_openalex(query: str, limit: int) -> list[dict]:
     return papers
 
 
+async def _fetch_openalex(query: str, limit: int) -> list[dict]:
+    """Cached/de-duplicated entry point for OpenAlex lookups."""
+    key = openalex_cache.make_key("openalex", query)
+    start = time.monotonic()
+    result, cache_hit = await openalex_cache.get_or_fetch(
+        key, lambda: _do_fetch_openalex(query, limit)
+    )
+    latency_ms = round((time.monotonic() - start) * 1000, 1)
+    logger.info(
+        "provider=openalex cache=%s query=%r papers=%d latency_ms=%s",
+        "hit" if cache_hit else "miss", query[:60], len(result), latency_ms,
+    )
+    return result
+
+
 def _reconstruct_abstract(inverted_index: dict) -> str:
     """Reconstruct abstract text from OpenAlex inverted index format."""
     if not inverted_index:
@@ -198,7 +260,27 @@ async def retrieve_papers(
     Tries Semantic Scholar first, falls back to OpenAlex.
 
     Returns list of normalized paper dicts.
+
+    A hard wall-clock ceiling (settings.PAPER_RETRIEVAL_TIMEOUT_SECONDS,
+    default 25s) bounds how long a single claim's retrieval can take —
+    this prevents one claim stuck retrying against a rate-limited or
+    circuit-broken provider from making the whole /analyze/ request (and
+    every other claim queued behind the shared semaphore) hang for minutes.
     """
+    timeout_s = getattr(settings, "PAPER_RETRIEVAL_TIMEOUT_SECONDS", 25.0)
+    try:
+        return await asyncio.wait_for(_retrieve_papers_inner(query, api_key, limit, db), timeout=timeout_s)
+    except asyncio.TimeoutError:
+        logger.error(f"retrieve_papers timed out after {timeout_s}s for query: {query[:60]}")
+        return []
+
+
+async def _retrieve_papers_inner(
+    query: str,
+    api_key: str,
+    limit: int,
+    db: Session | None,
+) -> list[dict]:
     papers = []
 
     try:
