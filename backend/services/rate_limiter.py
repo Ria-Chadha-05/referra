@@ -162,6 +162,16 @@ class ProviderRateLimiter:
                     if response.status_code in RETRYABLE_STATUS_CODES:
                         retry_after = self._parse_retry_after(response)
 
+                        # Forensic logging: print every header the provider sent
+                        # back on a retryable/error status. This is what lets us
+                        # diagnose *why* a 429 happened (Retry-After, X-RateLimit-*,
+                        # CF-*, Server, Via, Age, ...) instead of guessing blind.
+                        logger.warning(
+                            "provider=%s endpoint=%s status=%s response_headers=%s",
+                            provider, endpoint, response.status_code,
+                            dict(response.headers),
+                        )
+
                         # Long-term block detected: open the circuit instead
                         # of burning retries that cannot possibly succeed.
                         if retry_after is not None and retry_after > self.LONG_BLOCK_THRESHOLD_SECONDS:
@@ -239,7 +249,7 @@ semantic_scholar_limiter = ProviderRateLimiter(
     ProviderLimiterConfig(
         name="semantic_scholar",
         max_concurrent=getattr(settings, "SS_MAX_CONCURRENT_REQUESTS", 1),
-        min_interval_seconds=1,
+        min_interval_seconds=1.2,
         max_retries=getattr(settings, "EXTERNAL_API_MAX_RETRIES", 5),
     )
 )
@@ -247,8 +257,8 @@ semantic_scholar_limiter = ProviderRateLimiter(
 openalex_limiter = ProviderRateLimiter(
     ProviderLimiterConfig(
         name="openalex",
-        max_concurrent=getattr(settings, "OPENALEX_MAX_CONCURRENT_REQUESTS", 3),
-        min_interval_seconds=0.3,  # OpenAlex allows a higher polite-pool rate
+        max_concurrent=getattr(settings, "OPENALEX_MAX_CONCURRENT_REQUESTS", 1),
+        min_interval_seconds=1.2,  # OpenAlex allows a higher polite-pool rate
         max_retries=getattr(settings, "EXTERNAL_API_MAX_RETRIES", 5),
     )
 )
